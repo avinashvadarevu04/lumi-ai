@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/*  Lupus AI Labs — strict monochrome design tokens                    */
+/* ------------------------------------------------------------------ */
+:root {
+  color-scheme: dark;
+  --ink-950: #000000;
+  --ink-900: #080808;
+  --ink-800: #111111;
+  --ink-700: #161616;
+  --line: #262626;
+  --silver: #a1a1aa;
+  --graphite: #71717a;
+}
+
+html {
+  background-color: var(--ink-950);
+}
+
+body {
+  background-color: var(--ink-950);
+  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.intro-lock {
+  overflow: hidden;
+  height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+}
+
+::selection {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* Sleek monochrome scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* Focus ring — pure white, never chromatic */
+:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+@layer components {
+  /* Structural hairline grid drawn in 3% white */
+  .architect-grid {
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  }
+
+  /* Elevated panel */
+  .panel {
+    @apply rounded-3xl border border-white/10 bg-ink-800;
+  }
+
+  .panel-sub {
+    @apply rounded-2xl border border-white/[0.08] bg-ink-700;
+  }
+
+  /* Eyebrow label */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-400;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-full font-semibold transition-all duration-200 active:scale-[0.97];
+  }
+  .btn-primary {
+    @apply btn bg-white text-black hover:bg-neutral-200;
+  }
+  .btn-outline {
+    @apply btn border border-white/20 text-white hover:bg-white/10;
+  }
+  .btn-invert {
+    @apply btn border border-white/15 text-white hover:border-white hover:bg-white hover:text-black;
+  }
+
+  /* Text tiers */
+  .text-body {
+    @apply text-silver;
+  }
+  .text-meta {
+    @apply text-graphite;
+  }
+
+  /* Monochrome form inputs */
+  .field {
+    @apply w-full rounded-xl border border-white/10 bg-ink-700 px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-neutral-600 focus:border-white/60 focus:bg-black;
+  }
+
+  /* Hover-invert row used in matrices/lists */
+  .invert-hover {
+    @apply transition-colors duration-200 hover:bg-white hover:text-black;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
