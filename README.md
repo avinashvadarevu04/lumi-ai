@@ -1,16 +1,68 @@
-# React + Vite
+# Lumi AI Full-Stack Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Enterprise AI solutions showcase featuring a modern React frontend and Express REST API backend.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```
+lumi-ai/
+├── frontend/                   # React + Vite client application
+│   ├── src/                    # Components, animations, pages, styles
+│   │   ├── components/         # Hero, Navbar, Sections, ContactModal, etc.
+│   │   └── index.css           # Tailwind + Custom Design System CSS
+│   ├── public/                 # Static assets & 3D models
+│   ├── index.html              # HTML entry point
+│   ├── vite.config.js          # Vite config with /api reverse proxy
+│   └── package.json            # Frontend dependencies
+│
+├── backend/                    # Express.js REST API service
+│   ├── src/
+│   │   ├── routes/             # Health and Contact API routes
+│   │   └── server.js           # Express server entry point (port 5001)
+│   ├── .env.example            # Environment variable template
+│   └── package.json            # Backend dependencies
+│
+├── dev.sh                      # Unified one-click runner for both services
+└── package.json                # Root workspace orchestrator
+```
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Run Both Services Concurrently
+```bash
+./dev.sh
+```
+Or via npm workspaces:
+```bash
+npm run dev:all
+```
 
-## Expanding the Oxlint configuration
+- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Backend**: [http://localhost:5001](http://localhost:5001)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### 2. Run Services Individually
+
+**Frontend only:**
+```bash
+npm run dev:frontend
+# or: cd frontend && npm run dev
+```
+
+**Backend only:**
+```bash
+npm run dev:backend
+# or: cd backend && npm run dev
+```
+
+### 3. Build for Production
+
+```bash
+npm run build
+# or: cd frontend && npm run build
+```
+
+## API Endpoints
+
+- `GET /api/health` — Service health check and uptime.
+- `POST /api/contact` — Receives enterprise consultation requests from `ContactModal`.
+- `GET /api/contact` — View recent consultation submissions (administrative/debugging).

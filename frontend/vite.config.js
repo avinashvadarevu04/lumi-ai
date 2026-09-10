@@ -15,5 +15,11 @@ export default defineConfig({
     // Honour a port assigned by the host (e.g. the preview runner); fall back to Vite's default.
     port: Number(process.env.PORT) || 5173,
     strictPort: false,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+    },
   },
 })
