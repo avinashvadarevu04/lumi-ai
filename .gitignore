@@ -34,3 +34,9 @@ frontend/.env
 *.njsproj
 *.sw?
 .claude/
+
+# Local SQLite database and Prisma artefacts
+backend/prisma/*.db
+backend/prisma/*.db-journal
+backend/prisma/*.db-shm
+backend/prisma/*.db-wal

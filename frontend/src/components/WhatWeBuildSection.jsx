@@ -6,6 +6,11 @@ import useReveal from '../hooks/useReveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
+/** Sticky rest position of the first card, clearing the fixed header. */
+const TOP_OFFSET = 96;
+/** Extra offset per card, so the stack fans out slightly as it builds. */
+const STAGGER = 22;
+
 const SYSTEMS = [
   {
     id: '01',
@@ -81,25 +86,114 @@ const SYSTEMS = [
 export default function WhatWeBuildSection({ onOpenContact }) {
   const scopeRef = useRef(null);
   const cardsRef = useRef([]);
+  const slotsRef = useRef([]);
   useReveal(scopeRef);
 
-  // Stacking depth: as the next card slides over, the card beneath recedes and dims
+  /**
+   * Two coupled scroll effects give the stack its depth:
+   *
+   *  1. Entry  — an arriving card rises, scales up and settles as it reaches
+   *              its sticky rest position, so it reads as sliding *onto* the
+   *              stack rather than simply appearing.
+   *  2. Recede — once the next card starts covering it, a card scales down,
+   *              lifts slightly and is dimmed by a veil overlay.
+   *
+   * The veil replaces the previous `filter: blur()`: blurring a full-width
+   * panel repaints it on every scroll frame, while fading an overlay is a
+   * compositor-only operation and holds 60fps on mid-tier hardware.
+   */
   useLayoutEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
     const cards = cardsRef.current.filter(Boolean);
+    const slots = slotsRef.current.filter(Boolean);
+    if (cards.length !== slots.length || !cards.length) return undefined;
+
     const ctx = gsap.context(() => {
-      cards.forEach((card, i) => {
-        const next = cards[i + 1];
-        if (!next) return;
-        gsap.to(card, {
-          scale: 0.94,
-          opacity: 0.45,
-          filter: 'blur(1.5px)',
-          ease: 'none',
-          scrollTrigger: { trigger: next, start: 'top bottom', end: 'top 120px', scrub: true },
+      const mm = gsap.matchMedia();
+
+      // Reduced motion: render the finished state, no scroll-driven transforms.
+      mm.add('(prefers-reduced-motion: reduce)', () => {
+        gsap.set(cards, { clearProps: 'all' });
+        cards.forEach((card) => {
+          const veil = card.querySelector('[data-veil]');
+          if (veil) gsap.set(veil, { opacity: 0 });
+          gsap.set(card.querySelectorAll('[data-module], [data-outcome], [data-index]'), {
+            clearProps: 'all',
+          });
+        });
+      });
+
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        cards.forEach((card, i) => {
+          const veil = card.querySelector('[data-veil]');
+
+          // Entry — a timed tween on first appearance. Scrubbing this left a
+          // card parked at its faded "from" state for the whole stretch
+          // between appearing on screen and reaching its trigger window.
+          if (i > 0) {
+            gsap.fromTo(
+              card,
+              { y: 44, scale: 0.975, autoAlpha: 0 },
+              {
+                y: 0,
+                scale: 1,
+                autoAlpha: 1,
+                duration: 0.75,
+                ease: 'power3.out',
+                scrollTrigger: { trigger: slots[i], start: 'top bottom-=40', once: true },
+              }
+            );
+          }
+
+          // Contents — the capability modules and outcome bullets land one by
+          // one as the card arrives. Triggered from the static slot, never the
+          // sticky panel, whose measured position shifts once it sticks.
+          const modules = card.querySelectorAll('[data-module]');
+          const outcomes = card.querySelectorAll('[data-outcome]');
+          const index = card.querySelector('[data-index]');
+
+          const intro = gsap.timeline({
+            scrollTrigger: { trigger: slots[i], start: 'top 72%', once: true },
+          });
+
+          if (index) {
+            intro.fromTo(index, { autoAlpha: 0, x: -16 }, { autoAlpha: 1, x: 0, duration: 0.5, ease: 'power3.out' }, 0);
+          }
+          if (outcomes.length) {
+            intro.fromTo(
+              outcomes,
+              { autoAlpha: 0, x: -14 },
+              { autoAlpha: 1, x: 0, duration: 0.45, ease: 'power2.out', stagger: 0.055 },
+              0.1
+            );
+          }
+          if (modules.length) {
+            intro.fromTo(
+              modules,
+              { autoAlpha: 0, y: 26, scale: 0.93 },
+              { autoAlpha: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)', stagger: 0.075 },
+              0.15
+            );
+          }
+
+          // Recede — scrubbed against the arrival of the card above it.
+          const nextSlot = slots[i + 1];
+          if (!nextSlot) return;
+
+          const depth = gsap.timeline({
+            scrollTrigger: {
+              trigger: nextSlot,
+              start: 'top bottom-=140',
+              end: `top ${TOP_OFFSET + (i + 1) * STAGGER}`,
+              scrub: 0.6,
+            },
+          });
+
+          depth.to(card, { scale: 0.93, y: -14, ease: 'none' }, 0);
+          if (veil) depth.to(veil, { opacity: 0.62, ease: 'none' }, 0);
         });
       });
     }, scopeRef);
+
     return () => ctx.revert();
   }, []);
 
@@ -124,24 +218,42 @@ export default function WhatWeBuildSection({ onOpenContact }) {
 
       {/* Sticky stacking cards */}
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="space-y-12 sm:space-y-16">
+        <div className="space-y-12 sm:space-y-16" style={{ perspective: '1600px' }}>
           {SYSTEMS.map((system, index) => {
             const Icon = system.icon;
             return (
+              /* The outer slot stays in normal flow so ScrollTrigger can measure a
+                 stable position; a sticky element moves under its own trigger and
+                 reports the wrong start/end. */
               <div
                 key={system.id}
                 ref={(el) => {
+                  slotsRef.current[index] = el;
+                }}
+                style={{ zIndex: index + 10 }}
+                className="relative"
+              >
+              <div
+                ref={(el) => {
                   cardsRef.current[index] = el;
                 }}
-                className="panel sticky origin-top p-6 shadow-card will-change-transform sm:p-10 lg:p-12"
-                style={{ top: `${88 + index * 24}px`, zIndex: index + 10 }}
+                className="panel sticky origin-top overflow-hidden p-6 shadow-card will-change-transform sm:p-10 lg:p-12"
+                style={{ top: `${TOP_OFFSET + index * STAGGER}px` }}
               >
+                {/* Depth veil — faded in as the next card covers this one. */}
+                <div
+                  data-veil
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 z-20 bg-black opacity-0"
+                />
                 <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-12">
                   {/* Left */}
                   <div className="flex flex-col justify-between lg:col-span-6">
                     <div>
                       <div className="mb-6 flex flex-wrap items-center gap-3">
-                        <span className="font-mono text-2xl font-bold text-neutral-700 sm:text-3xl">{system.id}</span>
+                        <span data-index className="font-mono text-2xl font-bold text-neutral-700 sm:text-3xl">
+                          {system.id}
+                        </span>
                         <div className="rounded-full border border-white/15 px-3 py-1 font-mono text-[11px] font-semibold tracking-[0.15em] text-white">
                           {system.tag}
                         </div>
@@ -160,7 +272,7 @@ export default function WhatWeBuildSection({ onOpenContact }) {
                       </h4>
                       <ul className="grid grid-cols-1 gap-3 text-xs text-neutral-300 sm:grid-cols-2 sm:text-sm">
                         {system.outcomes.map((o) => (
-                          <li key={o} className="flex items-start gap-2">
+                          <li key={o} data-outcome className="flex items-start gap-2">
                             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
                             <span>{o}</span>
                           </li>
@@ -188,7 +300,7 @@ export default function WhatWeBuildSection({ onOpenContact }) {
                     </div>
 
                     {system.capabilities.map((cap, i) => (
-                      <div key={cap.name} className="panel-sub group cursor-default p-4 invert-hover">
+                      <div key={cap.name} data-module className="panel-sub group cursor-default p-4 invert-hover">
                         <div className="mb-1 flex items-center justify-between">
                           <h5 className="flex items-center gap-2 text-sm font-semibold">
                             <span className="h-2 w-2 bg-current" />
@@ -203,6 +315,7 @@ export default function WhatWeBuildSection({ onOpenContact }) {
                     ))}
                   </div>
                 </div>
+              </div>
               </div>
             );
           })}

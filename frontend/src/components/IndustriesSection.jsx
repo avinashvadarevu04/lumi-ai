@@ -157,8 +157,12 @@ export default function IndustriesSection({ onOpenContact }) {
 
             <div className="mb-8 space-y-3">
               <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-graphite">Core AI capability layers</div>
-              {current.systems.map((sys) => (
-                <div key={sys.name} className="panel-sub group p-4 invert-hover">
+              {current.systems.map((sys, i) => (
+                <div
+                  key={`${current.name}-${sys.name}`}
+                  className="panel-sub group p-4 invert-hover"
+                  style={{ animation: `slide-up 0.45s cubic-bezier(0.16,1,0.3,1) ${i * 0.07}s both` }}
+                >
                   <div className="mb-1.5 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-current" />
                     <h4 className="text-sm font-semibold">{sys.name}</h4>

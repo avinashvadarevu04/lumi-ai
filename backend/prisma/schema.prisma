@@ -1,0 +1,149 @@
+// Lupus AI Labs — data model
+// SQLite by default; swap `provider` to "postgresql" and update DATABASE_URL to
+// move to Postgres without touching application code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Administrator with access to the hidden operations gateway.
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  role         String    @default("SUPER_ADMIN") // SUPER_ADMIN | EDITOR
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+
+  // Brute-force protection
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  passwordChangedAt DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  sessions  AdminSession[]
+  auditLogs AuditLog[]
+
+  @@map("admin_users")
+}
+
+/// Server-side session record. A JWT is only honoured while its matching
+/// session row exists and is unrevoked, which makes remote revocation possible.
+model AdminSession {
+  id        String    @id @default(cuid())
+  tokenId   String    @unique // jti claim
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userAgent String?
+  ipHash    String?
+
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("admin_sessions")
+}
+
+/// Inbound consultation request captured by the public contact form.
+model Lead {
+  id             String  @id @default(cuid())
+  name           String
+  email          String
+  company        String?
+  selectedSystem String  @default("GENERAL") // CUSTOMER_INTERACTION | OPERATIONS | PRODUCTS | GENERAL
+  message        String
+  status         String  @default("NEW") // NEW | IN_REVIEW | CONTACTED | ARCHIVED
+
+  source        String?   // e.g. "contact_modal"
+  notes         String?   // internal follow-up notes
+  contactedAt   DateTime?
+  ipHash        String?
+  userAgent     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+/// Case study rendered on the public site. Fully editable from the dashboard.
+model Project {
+  id              String  @id @default(cuid())
+  title           String
+  slug            String  @unique
+  category        String
+  headline        String?
+  description     String
+  solution        String?
+  workflowSummary String?
+  metrics         String?
+  /// JSON-encoded string[] — exposed as a real array by the API layer.
+  technologies    String  @default("[]")
+  /// JSON-encoded string[] of architectural highlights.
+  highlights      String  @default("[]")
+
+  isFeatured  Boolean @default(false)
+  isPublished Boolean @default(true)
+  order       Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@index([isPublished])
+  @@map("projects")
+}
+
+/// Visitor impressions, CTA conversions and system events.
+model Telemetry {
+  id        String  @id @default(cuid())
+  type      String // PAGE_VIEW | SECTION_VIEW | CTA_CLICK | LEAD_SUBMIT | SYSTEM
+  label     String?
+  path      String?
+  referrer  String?
+  sessionId String?
+  userAgent String?
+  ipHash    String?
+  /// JSON-encoded object of extra context.
+  meta      String  @default("{}")
+
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("telemetry")
+}
+
+/// Append-only record of privileged actions and access events.
+model AuditLog {
+  id     String     @id @default(cuid())
+  userId String?
+  user   AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action   String // LOGIN_SUCCESS | LOGIN_FAILED | LOGOUT | LEAD_UPDATED | ...
+  entity   String?
+  entityId String?
+  detail   String?
+  ipHash   String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}

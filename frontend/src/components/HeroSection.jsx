@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight } from 'lucide-react';
-import AIRobotCanvas from './AIRobotCanvas';
+import RobotStage from './RobotStage';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,17 +46,20 @@ export default function HeroSection({ onOpenContact, introDone = true }) {
       <div className="pointer-events-none absolute inset-y-0 right-0 w-full bg-[radial-gradient(ellipse_at_70%_45%,rgba(255,255,255,0.10),transparent_55%)] lg:w-[65%]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#000000_0%,#000000_28%,transparent_60%)]" />
 
-      {/* Robot — bleeds off the right edge on desktop, stacks below copy on mobile */}
+      {/* Robot: right column on desktop, stacked below the copy on mobile.
+          The scene scales the robot with stage height (arm span is about 0.78x the
+          height), so height is capped near 1.1x width to keep both hands in frame.
+          On desktop the stage is anchored to the bottom so the legs meet the hero edge. */}
       <div
         data-hero-visual
-        className="invisible relative order-2 mx-auto h-[62vh] min-h-[440px] w-full lg:absolute lg:inset-y-0 lg:right-0 lg:order-none lg:h-full lg:w-[56%]"
+        className="invisible relative order-2 mx-auto h-[min(62vh,112vw)] min-h-[340px] w-full lg:absolute lg:bottom-0 lg:right-0 lg:order-none lg:h-full lg:max-h-[62vw] lg:w-[56%]"
       >
-        <AIRobotCanvas active={introDone} />
+        <RobotStage active={introDone} />
       </div>
 
       {/* Copy */}
-      <div className="relative z-10 order-1 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pb-6 pt-28 sm:px-6 lg:min-h-screen lg:px-8 lg:pb-0">
-        <div data-hero-copy className="max-w-2xl lg:max-w-[52%]">
+      <div className="pointer-events-none relative z-10 order-1 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pb-6 pt-28 sm:px-6 lg:min-h-screen lg:px-8 lg:pb-0">
+        <div data-hero-copy className="pointer-events-auto max-w-2xl lg:max-w-[52%]">
           <h1 className="font-display uppercase leading-[0.92] tracking-tight text-white">
             <span data-hero className="invisible relative mb-3 block text-[clamp(1.5rem,3.1vw,2.75rem)] font-medium lg:whitespace-nowrap">
               <span className="relative inline-block">
@@ -116,8 +119,8 @@ export default function HeroSection({ onOpenContact, introDone = true }) {
         <span>3</span>
       </div>
       <div data-hero data-hero-rail className="invisible absolute bottom-6 right-4 z-10 hidden text-right font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500 sm:right-6 lg:right-8 lg:block">
-        <div>Unit — Lupus_Agent_V3</div>
-        <div className="text-neutral-600">Chrome face · dot-matrix optics</div>
+        <div>Unit — Lumi Robot</div>
+        <div className="text-neutral-600">Interactive · follows your cursor</div>
       </div>
     </section>
   );

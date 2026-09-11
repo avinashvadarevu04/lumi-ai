@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LUMI AI — 3D Robot</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #050505;
+      color: #fafafa;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* Card — h-[460px] md:h-[540px], overflow hidden */
+    .card {
+      position: relative;
+      width: min(1100px, 100%);
+      height: 460px;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    /* Spotlight sweep — same SVG + keyframes as components/ui/spotlight.tsx */
+    .spotlight {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+      top: -10rem;
+      left: 0;
+      width: 138%;
+      height: 169%;
+      opacity: 0;
+      animation: spotlight 2s ease 0.35s 1 forwards;
+    }
+
+    @keyframes spotlight {
+      0%   { opacity: 0; transform: translate(-72%, -62%) scale(0.55); }
+      100% { opacity: 1; transform: translate(-50%, -40%) scale(1); }
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .copy {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+
+    .copy h1 {
+      margin: 0;
+      font-size: 1.875rem;
+      font-weight: 700;
+      line-height: 1;
+      text-transform: uppercase;
+      background: linear-gradient(to bottom, #fafafa, #a3a3a3);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .copy p {
+      margin: 1rem 0 0;
+      max-width: 32rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      text-transform: uppercase;
+      color: #d4d4d4;
+    }
+
+    /* Robot stage */
+    .stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .stage canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    .fallback {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .orb {
+      width: 10rem;
+      height: 10rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.03) 48%, transparent 70%);
+      box-shadow: 0 0 80px rgba(255, 255, 255, 0.12);
+    }
+
+    .stage.loaded .fallback { opacity: 0; }
+
+    .error {
+      position: absolute;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #a3a3a3;
+    }
+
+    @media (min-width: 640px) {
+      .copy { padding: 2rem; }
+      .copy h1 { font-size: 2.25rem; }
+      .copy p { font-size: 1.5rem; }
+    }
+
+    @media (min-width: 768px) {
+      .card { height: 540px; }
+      .layout { flex-direction: row; }
+      .spotlight { top: -5rem; left: 15rem; }
+      .copy h1 { font-size: 3rem; }
+      .copy p { margin-top: 1.25rem; font-size: 1.875rem; }
+    }
+
+    @media (min-width: 1024px) {
+      .spotlight { width: 84%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spotlight { animation: none; opacity: 1; transform: translate(-50%, -40%); }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <svg class="spotlight" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3787 2842" fill="none" aria-hidden="true">
+      <g filter="url(#spotlight-filter)">
+        <ellipse cx="1924.71" cy="273.501" rx="1924.71" ry="273.501"
+          transform="matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)"
+          fill="white" fill-opacity="0.21" />
+      </g>
+      <defs>
+        <filter id="spotlight-filter" x="0.860352" y="0.838989" width="3785.16" height="2840.26"
+          filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="151" result="effect1_foregroundBlur_1065_8" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="layout">
+      <div class="copy">
+        <h1>You know the business</h1>
+        <p>We know the chemistry</p>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="robot"></canvas>
+        <div class="fallback"><div class="orb"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Same Spline runtime version the LUMI AI site uses (@splinetool/runtime 1.12.95).
+    import { Application } from "https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.12.95/build/runtime.js";
+
+    const SCENE = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
+    const stage = document.getElementById("stage");
+    const app = new Application(document.getElementById("robot"));
+
+    app
+      .load(SCENE)
+      .then(() => stage.classList.add("loaded"))
+      .catch((error) => {
+        console.error(error);
+        const note = document.createElement("div");
+        note.className = "error";
+        note.textContent = "Couldn't load the 3D robot — check your internet connection.";
+        stage.append(note);
+      });
+  </script>
+</body>
+</html>

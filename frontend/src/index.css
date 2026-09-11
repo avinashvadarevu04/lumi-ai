@@ -134,3 +134,40 @@ h4,
     scroll-behavior: auto !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Motion infrastructure                                              */
+/* ------------------------------------------------------------------ */
+
+/* Lenis smooth scroll: required rules */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+/* Lenis animates the scroll itself; native smooth scrolling would fight it. */
+html.lenis {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+@layer utilities {
+  .gpu {
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.45);
+  }
+}

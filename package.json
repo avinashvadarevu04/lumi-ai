@@ -13,6 +13,15 @@
     "dev:all": "npm run dev --workspace=backend & npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "build:frontend": "npm run build --workspace=frontend",
-    "preview": "npm run preview --workspace=frontend"
+    "preview": "npm run preview --workspace=frontend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "db:studio": "npm run db:studio --workspace=backend",
+    "lint": "npm run lint --workspace=frontend",
+    "start": "npm run start --workspace=backend"
+  },
+  "overrides": {
+    "qs": "^6.16.0",
+    "deepmerge-ts": "^8.0.2"
   }
 }

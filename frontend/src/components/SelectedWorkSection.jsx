@@ -1,8 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
 import { ArrowUpRight, CheckCircle2, X, Workflow, Code } from 'lucide-react';
 import useReveal from '../hooks/useReveal';
 
-const PROJECTS = [
+/**
+ * Baked-in copy of the case studies. These render instantly on first paint and
+ * remain the fallback if the API is unreachable, so the section is never empty.
+ * When the API answers, its content wins — that is what makes the dashboard's
+ * edits appear live without a deploy.
+ */
+const FALLBACK_PROJECTS = [
   {
     id: '01',
     name: 'GETMYHOTELS',
@@ -99,6 +106,23 @@ const PROJECTS = [
     ],
   },
 ];
+
+/** Maps an API record onto the shape this section renders. */
+function fromApi(project, index) {
+  return {
+    id: String(index + 1).padStart(2, '0'),
+    key: project.id,
+    name: project.title,
+    category: project.category,
+    headline: project.headline || '',
+    workflow: project.workflowSummary || '',
+    problem: project.description || '',
+    solution: project.solution || '',
+    impact: project.metrics || '',
+    tech: project.technologies || [],
+    highlights: project.highlights || [],
+  };
+}
 
 function CaseStudyModal({ project, onClose }) {
   useEffect(() => {
@@ -198,8 +222,81 @@ function CaseStudyModal({ project, onClose }) {
 
 export default function SelectedWorkSection() {
   const scopeRef = useRef(null);
+  const rowsRef = useRef([]);
+  const [projects, setProjects] = useState(FALLBACK_PROJECTS);
   const [selected, setSelected] = useState(null);
   useReveal(scopeRef);
+
+  /**
+   * Per-case-study choreography. The card itself is revealed by `useReveal`;
+   * this staggers what is inside it so each row assembles as it arrives —
+   * title, then the three columns, then the stack chips popping in last.
+   * Keyed on `projects` so it re-runs when live content replaces the fallback.
+   */
+  useLayoutEffect(() => {
+    const rows = rowsRef.current.filter(Boolean);
+    if (!rows.length) return undefined;
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add('(prefers-reduced-motion: reduce)', () => {
+        rows.forEach((row) => {
+          gsap.set(row.querySelectorAll('[data-work-col], [data-work-title], [data-chip]'), {
+            clearProps: 'all',
+          });
+        });
+      });
+
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        rows.forEach((row) => {
+          const tl = gsap.timeline({
+            scrollTrigger: { trigger: row, start: 'top 82%', once: true },
+          });
+
+          const title = row.querySelector('[data-work-title]');
+          const cols = row.querySelectorAll('[data-work-col]');
+          const chips = row.querySelectorAll('[data-chip]');
+
+          if (title) {
+            tl.fromTo(title, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 0);
+          }
+          if (cols.length) {
+            tl.fromTo(
+              cols,
+              { autoAlpha: 0, y: 22 },
+              { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power2.out', stagger: 0.09 },
+              0.08
+            );
+          }
+          if (chips.length) {
+            tl.fromTo(
+              chips,
+              { autoAlpha: 0, scale: 0.8 },
+              { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(2)', stagger: 0.05 },
+              0.32
+            );
+          }
+        });
+      });
+    }, scopeRef);
+
+    return () => ctx.revert();
+  }, [projects]);
+
+  // Live content from the operations dashboard, with the static list as a fallback.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/projects', { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.projects?.length) setProjects(data.projects.map(fromApi));
+      })
+      .catch(() => {
+        // Keep the fallback content on any failure.
+      });
+    return () => controller.abort();
+  }, []);
 
   return (
     <section ref={scopeRef} id="selected-work" className="relative -mt-px bg-black py-24 sm:py-32">
@@ -217,21 +314,24 @@ export default function SelectedWorkSection() {
         </div>
 
         <div className="space-y-6">
-          {PROJECTS.map((p, i) => (
+          {projects.map((p, i) => (
             <button
-              key={p.id}
+              key={p.key || p.id}
               type="button"
+              ref={(el) => {
+                rowsRef.current[i] = el;
+              }}
               data-reveal={i % 2 ? 'right' : 'left'}
               onClick={() => setSelected(p)}
               className="panel group relative w-full cursor-pointer overflow-hidden p-6 text-left transition-all duration-300 hover:border-white/40 sm:p-10"
             >
               <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
-                <div className="lg:col-span-4">
+                <div data-work-col className="lg:col-span-4">
                   <div className="mb-3 flex flex-wrap items-center gap-3">
                     <span className="font-mono text-xs font-bold text-graphite">PROJECT // {p.id}</span>
                     <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-neutral-300">{p.category}</span>
                   </div>
-                  <h3 className="mb-2 font-display text-2xl font-bold text-white sm:text-3xl">{p.name}</h3>
+                  <h3 data-work-title className="mb-2 font-display text-2xl font-bold text-white sm:text-3xl">{p.name}</h3>
                   <p className="mb-4 text-sm font-medium text-silver">{p.headline}</p>
                   <div className="inline-block rounded-xl border border-white/10 bg-black p-2.5 font-mono text-[11px]">
                     <span className="text-graphite">WORKFLOW: </span>
@@ -239,7 +339,7 @@ export default function SelectedWorkSection() {
                   </div>
                 </div>
 
-                <div className="space-y-3 lg:col-span-5">
+                <div data-work-col className="space-y-3 lg:col-span-5">
                   <div>
                     <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-graphite">Business challenge</span>
                     <p className="text-xs leading-relaxed text-silver">{p.problem}</p>
@@ -250,12 +350,12 @@ export default function SelectedWorkSection() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-4 lg:col-span-3 lg:items-end lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                <div data-work-col className="flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-4 lg:col-span-3 lg:items-end lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
                   <div className="w-full">
                     <span className="mb-2 block font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-graphite">Core stack</span>
                     <div className="flex flex-wrap gap-1.5">
                       {p.tech.slice(0, 4).map((t) => (
-                        <span key={t} className="rounded border border-white/10 bg-black px-2 py-0.5 font-mono text-[10px] text-neutral-300">
+                        <span key={t} data-chip className="rounded border border-white/10 bg-black px-2 py-0.5 font-mono text-[10px] text-neutral-300">
                           {t}
                         </span>
                       ))}

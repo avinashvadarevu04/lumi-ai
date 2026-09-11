@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Operations gateway — internal only. Not linked from anywhere on the site.
+Disallow: /ops-gateway
+Disallow: /ops-gateway/
+Disallow: /portal-control-x9
+Disallow: /api/
