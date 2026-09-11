@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Menu, X, ArrowUpRight, RotateCcw } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { LupusLockup } from './BrandLogo';
+import useMagnetic from '../lib/motion/useMagnetic';
 
 const NAV_LINKS = [
   { label: 'Systems', href: '#what-we-build' },
@@ -12,10 +13,12 @@ const NAV_LINKS = [
   { label: 'Why Lumi', href: '#why-lumi' },
 ];
 
-export default function Navbar({ onOpenContact, onReplayIntro }) {
+export default function Navbar({ onOpenContact }) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
+  const talkRef = useRef(null);
+  useMagnetic(talkRef, { strength: 0.35 });
 
   useEffect(() => {
     let last = window.scrollY;
@@ -67,22 +70,7 @@ export default function Navbar({ onOpenContact, onReplayIntro }) {
 
         {/* Right cluster */}
         <div className="hidden items-center gap-3 lg:flex">
-          {onReplayIntro && (
-            <button
-              type="button"
-              onClick={onReplayIntro}
-              title="Replay 3D intro"
-              className="btn-invert gap-1.5 whitespace-nowrap px-3 py-1.5 font-mono text-[11px]"
-            >
-              <RotateCcw className="h-3 w-3" />
-              <span className="hidden xl:inline">Replay intro</span>
-            </button>
-          )}
-          <div className="hidden items-center gap-2 whitespace-nowrap rounded-full border border-white/10 px-2.5 py-1 font-mono text-[11px] text-neutral-500 xl:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            <span>PROD V2.4</span>
-          </div>
-          <button type="button" onClick={onOpenContact} className="btn-primary group whitespace-nowrap px-4 py-2 text-xs">
+          <button ref={talkRef} type="button" onClick={onOpenContact} className="btn-primary group whitespace-nowrap px-4 py-2 text-xs">
             <span>Talk to Lumi</span>
             <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </button>
@@ -116,19 +104,6 @@ export default function Navbar({ onOpenContact, onReplayIntro }) {
             ))}
           </div>
           <div className="mt-5 flex flex-col gap-3">
-            {onReplayIntro && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onReplayIntro();
-                }}
-                className="btn-invert w-full py-2.5 font-mono text-xs"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Replay 3D intro
-              </button>
-            )}
             <button
               type="button"
               onClick={() => {

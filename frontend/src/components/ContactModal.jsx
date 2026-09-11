@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { X, Send, CheckCircle2, Terminal } from 'lucide-react';
+import { trackEvent } from '../lib/telemetry';
 
-const INITIAL = { name: '', email: '', company: '', industry: 'Healthcare', problem: '' };
+const INITIAL = {
+  name: '',
+  email: '',
+  company: '',
+  selectedSystem: 'CUSTOMER_INTERACTION',
+  problem: '',
+  website: '', // honeypot, must stay empty
+};
+
+const SYSTEMS = [
+  ['CUSTOMER_INTERACTION', 'Customer Interaction Systems'],
+  ['OPERATIONS', 'Business Operations Systems'],
+  ['PRODUCTS', 'AI Products & Platforms'],
+  ['GENERAL', 'Not sure yet / something else'],
+];
 
 export default function ContactModal({ isOpen, onClose }) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(INITIAL);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -26,24 +43,40 @@ export default function ContactModal({ isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
+    setError('');
+    setFieldErrors({});
+
     try {
-      await fetch('/api/contact', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, message: form.problem, source: 'contact_modal' }),
       });
+      const payload = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Surface the real reason rather than pretending the enquiry landed.
+        setError(payload.error || 'We could not submit your enquiry. Please try again.');
+        setFieldErrors(payload.details || {});
+        return;
+      }
+
+      trackEvent('LEAD_SUBMIT', { label: form.selectedSystem });
+      setSubmitted(true);
     } catch {
-      // Graceful fallback so modal always succeeds even in offline/demo mode
+      setError('We could not reach the server. Check your connection, or email us directly.');
     } finally {
       setLoading(false);
-      setSubmitted(true);
     }
   };
 
   const handleReset = () => {
     setSubmitted(false);
     setForm(INITIAL);
+    setError('');
+    setFieldErrors({});
     onClose();
   };
 
@@ -84,10 +117,12 @@ export default function ContactModal({ isOpen, onClose }) {
                 <label className="block">
                   <span className="mb-1.5 block font-mono text-[11px] font-medium tracking-[0.15em] text-neutral-400">YOUR NAME *</span>
                   <input type="text" required placeholder="e.g. Alex Morgan" value={form.name} onChange={set('name')} className="field" />
+                  {fieldErrors.name && <span className="mt-1 block text-[11px] text-white">{fieldErrors.name}</span>}
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block font-mono text-[11px] font-medium tracking-[0.15em] text-neutral-400">WORK EMAIL *</span>
                   <input type="email" required placeholder="alex@company.com" value={form.email} onChange={set('email')} className="field" />
+                  {fieldErrors.email && <span className="mt-1 block text-[11px] text-white">{fieldErrors.email}</span>}
                 </label>
               </div>
 
@@ -97,15 +132,13 @@ export default function ContactModal({ isOpen, onClose }) {
                   <input type="text" placeholder="Company or practice name" value={form.company} onChange={set('company')} className="field" />
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block font-mono text-[11px] font-medium tracking-[0.15em] text-neutral-400">PRIMARY INDUSTRY</span>
-                  <select value={form.industry} onChange={set('industry')} className="field appearance-none">
-                    <option value="Healthcare">Healthcare / Clinics</option>
-                    <option value="Professional Services">Legal / Accounting / Advisory</option>
-                    <option value="Logistics">Logistics & Freight</option>
-                    <option value="Commerce">Commerce & D2C</option>
-                    <option value="Travel">Travel & Hospitality</option>
-                    <option value="Education">Education & Coaching</option>
-                    <option value="Custom Platform">Other Custom System</option>
+                  <span className="mb-1.5 block font-mono text-[11px] font-medium tracking-[0.15em] text-neutral-400">SYSTEM OF INTEREST</span>
+                  <select value={form.selectedSystem} onChange={set('selectedSystem')} className="field appearance-none">
+                    {SYSTEMS.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
@@ -122,7 +155,22 @@ export default function ContactModal({ isOpen, onClose }) {
                   onChange={set('problem')}
                   className="field resize-none"
                 />
+                {fieldErrors.message && <span className="mt-1 block text-[11px] text-white">{fieldErrors.message}</span>}
               </label>
+
+              {/* Honeypot: hidden from people, irresistible to bots. */}
+              <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+                <label>
+                  Website
+                  <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} />
+                </label>
+              </div>
+
+              {error && (
+                <div role="alert" className="rounded-xl border border-white/30 bg-white/[0.04] px-4 py-3 text-sm text-white">
+                  {error}
+                </div>
+              )}
 
               <div className="pt-2">
                 <button type="submit" disabled={loading} className="btn-primary group w-full px-6 py-3.5 text-sm disabled:opacity-50">

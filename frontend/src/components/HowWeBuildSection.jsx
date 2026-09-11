@@ -90,7 +90,7 @@ export default function HowWeBuildSection() {
                   <p className={`mb-6 text-xs leading-relaxed sm:text-sm ${isActive ? 'text-neutral-700' : 'text-silver'}`}>{stage.description}</p>
                 </div>
 
-                <div className={`space-y-2.5 border-t pt-6 ${isActive ? 'border-black/10' : 'border-white/10'}`}>
+                <div data-pop className={`space-y-2.5 border-t pt-6 ${isActive ? 'border-black/10' : 'border-white/10'}`}>
                   <div className={`mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] ${isActive ? 'text-neutral-500' : 'text-graphite'}`}>
                     Core deliverables
                   </div>

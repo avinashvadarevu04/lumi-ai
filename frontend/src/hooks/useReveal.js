@@ -55,6 +55,7 @@ const VARIANTS = {
  *  data-reveal[=variant]      up | down | left | right | scale | fade | clip (default up)
  *  data-delay="0.2"           extra delay for a reveal
  *  data-stagger               children reveal as a staggered group
+ *  data-pop                   children pop in one by one with a slight overshoot
  *  data-line                  hairline draws from left to right
  *  data-parallax="0.2"        scrubbed vertical drift, signed speed (−1 … 1)
  *  data-scrub-scale           scales/fades in as it approaches the viewport centre
@@ -117,6 +118,28 @@ export default function useReveal(scopeRef) {
             ease,
             stagger: reduce ? 0 : 0.09,
             scrollTrigger: { trigger: group, start: 'top 85%', once: true },
+          }
+        );
+      });
+
+      /* Pop groups — children scale up into place with a slight overshoot,
+         which reads as a card "landing" rather than merely fading in. */
+      gsap.utils.toArray('[data-pop]').forEach((group) => {
+        const items = Array.from(group.children);
+        if (!items.length) return;
+        const delay = parseFloat(group.getAttribute('data-delay') || '0') || 0;
+        gsap.fromTo(
+          items,
+          reduce ? { autoAlpha: 0 } : { autoAlpha: 0, y: 24, scale: 0.92 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            duration: reduce ? 0.01 : 0.55,
+            ease: reduce ? 'none' : 'back.out(1.5)',
+            stagger: reduce ? 0 : 0.07,
+            delay,
+            scrollTrigger: { trigger: group, start: 'top 88%', once: true },
           }
         );
       });
