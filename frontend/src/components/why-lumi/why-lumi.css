@@ -1,0 +1,107 @@
+/* Why Lumi: pillar cards, border beam and landing FX. Monochrome only. */
+
+/* Faint drafting grid behind the pillars, fading out toward the edges. */
+.wl-backdrop {
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 64%, #000 15%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 64%, #000 15%, transparent 75%);
+}
+
+/* The grid owns the perspective; each slot (preserve-3d) hands the 3D context
+   down to its dropping card. */
+.wl-grid {
+  perspective: 1400px;
+  perspective-origin: 50% 0%;
+}
+
+/* Base shadow. A dark shadow disappears on pure black, so the card's contact
+   with the floor reads as a soft pool of light under its base. GSAP compresses
+   it on impact; at rest (and with reduced motion) it simply sits here. */
+.wl-slot__shadow {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -22px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.035) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Impact hairline along the card's base: hidden at rest, flashed on landing. */
+.wl-slot__flash {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #ffffff 50%, rgba(255, 255, 255, 0));
+  box-shadow: 0 0 12px 1px rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Active card (hovered, focused or auto-cycled): brighter hairline border,
+   a top light and a lit status LED. */
+.wl-face {
+  transition: border-color 0.45s ease;
+}
+.wl-face[data-active],
+.wl-face:focus-visible {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+@media (hover: hover) {
+  .wl-face:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+}
+
+.wl-face__halo {
+  background: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.wl-face[data-active] .wl-face__halo,
+.wl-face:focus-visible .wl-face__halo {
+  opacity: 1;
+}
+
+.wl-led {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+.wl-face[data-active] .wl-led,
+.wl-face:focus-visible .wl-led {
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.65);
+}
+
+/* Border beam overlay: covers the card's border box exactly, hidden until the
+   motion hook fades it in on the active card. */
+.wl-beam {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.wl-beam__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* The second, blurred stroke that gives the beam its soft glow. */
+.wl-beam__layer--glow {
+  filter: blur(3px);
+}

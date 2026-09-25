@@ -1,0 +1,73 @@
+/* Metrics / Impact section: isometric field and slot-reel counters. */
+
+/* The field fades out toward the section edges so it meets the black sections
+   above and below without a seam. */
+.xp-field {
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 55%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(120% 80% at 50% 55%, #000 30%, transparent 78%);
+}
+
+/* Soft charcoal lift behind the counters. */
+.xp-glow {
+  background: radial-gradient(55% 40% at 50% 62%, rgba(255, 255, 255, 0.05), transparent 72%);
+}
+
+/* Counter window: exactly one row tall. The vertical mask fades rows in and
+   out like a drum and clips everything outside the window; the horizontal
+   padding leaves room for the motion blur to bleed sideways. */
+.xp-number {
+  --reel-h: 1.08em;
+  display: inline-flex;
+  align-items: flex-start;
+  height: var(--reel-h);
+  line-height: var(--reel-h);
+  padding-inline: 0.16em;
+  margin-inline: -0.16em;
+  font-variant-numeric: tabular-nums;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+}
+
+/* Fixed digit cell (tabular width), so nothing shifts while the reels roll. */
+.xp-reel {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 1ch;
+  height: var(--reel-h);
+}
+
+/* Motion-blur lens: stretched, blurred and faded in proportion to reel speed. */
+.xp-reel__lens {
+  display: block;
+  height: 100%;
+  transform-origin: 50% 50%;
+}
+
+.xp-reel__strip {
+  display: block;
+}
+
+.xp-reel__row {
+  display: block;
+  height: var(--reel-h);
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.xp-suffix {
+  display: inline-block;
+  height: var(--reel-h);
+  margin-left: 0.04em;
+  transform-origin: 50% 70%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .xp-reel__lens {
+    will-change: transform, filter;
+  }
+
+  .xp-reel__strip {
+    will-change: transform;
+  }
+}

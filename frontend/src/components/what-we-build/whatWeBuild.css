@@ -1,0 +1,264 @@
+/*
+ * What We Build: the obsidian glass deck. Strict monochrome only: black,
+ * white, neutral greys and their alphas.
+ *
+ * The default rules describe the static list used on mobile, under reduced
+ * motion and before any script runs. The pinned 3D deck switches on only when
+ * the desktop choreography sets data-deck="3d" on the section.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Card face: a sheet of polarised obsidian glass                     */
+/* ------------------------------------------------------------------ */
+.wwb-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, 0.022) 50%, transparent 64%),
+    radial-gradient(120% 70% at 50% -12%, rgba(255, 255, 255, 0.06), transparent 58%),
+    linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 -12px 26px -16px rgba(0, 0, 0, 0.9),
+    0 40px 90px -40px rgba(0, 0, 0, 0.95);
+}
+
+/* Thin top-edge highlight: the glass catching light along its upper bevel. */
+.wwb-face::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6) 50%, transparent);
+  pointer-events: none;
+}
+
+/* Inner wireframe: blueprint grid, registration marks and a plate reference. */
+.wwb-wire {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.wwb-wire__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  -webkit-mask-image: radial-gradient(ellipse 55% 75% at 88% 18%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse 55% 75% at 88% 18%, #000 0%, transparent 72%);
+}
+
+.wwb-wire__mark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid rgba(255, 255, 255, 0.32);
+}
+.wwb-wire__mark--tl {
+  top: 16px;
+  left: 16px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.wwb-wire__mark--tr {
+  top: 16px;
+  right: 16px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.wwb-wire__mark--bl {
+  bottom: 16px;
+  left: 16px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.wwb-wire__mark--br {
+  bottom: 16px;
+  right: 16px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.wwb-wire__ref {
+  position: absolute;
+  right: 40px;
+  bottom: 12px;
+  font: 500 9px/1 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+/* Contour: a 1px white outline drawn with stroke-dashoffset as a card docks. */
+.wwb-contour {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.wwb-contour rect {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+}
+
+/* Cursor spotlight (its gradient and opacity come from SHEEN_STYLE). */
+.wwb-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Desktop: the pinned 3D deck                                        */
+/* ------------------------------------------------------------------ */
+.wwb[data-deck='3d'] .wwb-stage {
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+  overflow: clip; /* clip, not hidden: focus can never scroll the stage */
+}
+
+.wwb[data-deck='3d'] .wwb-frame {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  padding-top: clamp(16px, 3vh, 32px);
+  padding-bottom: clamp(12px, 2.4vh, 24px);
+}
+
+/* The heading opens the stage, then lifts away as card 01 docks over it. */
+.wwb[data-deck='3d'] .wwb-header {
+  position: absolute;
+  top: clamp(88px, 13vh, 128px);
+  left: 2rem;
+  right: 2rem;
+  z-index: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.wwb[data-deck='3d'] .wwb-deck-area {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding-top: 76px; /* room for the sheets stacked behind the front card */
+  pointer-events: none;
+}
+
+/* Perspective stage. The fit scale shrinks the deck on short viewports. */
+.wwb[data-deck='3d'] .wwb-deck {
+  display: grid;
+  flex-shrink: 0;
+  gap: 0;
+  perspective: 1400px;
+  perspective-origin: 50% 30%;
+  transform: scale(var(--wwb-fit, 1));
+  transform-origin: 50% 50%;
+}
+
+/* Every card shares one grid cell, so all sheets match the tallest card. */
+.wwb[data-deck='3d'] .wwb-card {
+  grid-area: 1 / 1;
+  transform-origin: 50% 0%;
+  will-change: transform, filter;
+  pointer-events: none;
+}
+.wwb[data-deck='3d'] .wwb-card[data-active] {
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Deck rail: index, progress and card navigation                     */
+/* ------------------------------------------------------------------ */
+.wwb-rail {
+  display: none;
+}
+
+.wwb[data-deck='3d'] .wwb-rail {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 14px;
+}
+
+/* A black apron behind the rail: incoming cards rise out from beneath it. */
+.wwb[data-deck='3d'] .wwb-rail::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: -48px;
+  left: -50vw;
+  right: -50vw;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), #000000 18px);
+}
+
+.wwb-rail__track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.wwb-rail__fill {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  transform-origin: 0 50%;
+}
+
+.wwb-rail__tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.wwb-rail__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  height: 1.75rem;
+  padding: 0 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  color: #a3a3a3;
+  font: 500 11px/1 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+.wwb-rail__btn:hover,
+.wwb-rail__btn:focus-visible {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+.wwb-rail__btn[aria-current='true'] {
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+}

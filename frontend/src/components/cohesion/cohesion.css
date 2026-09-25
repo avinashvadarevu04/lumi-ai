@@ -1,0 +1,156 @@
+/*
+ * Cohesion pass: section styles for How We Build and Company Story.
+ * Strictly monochrome: white, black and their alpha steps only.
+ */
+
+/* SplitText heading masks: room below each line so the clip never bites
+   descenders (g, p, y) once the reveal has finished. */
+.cohesion-line-mask {
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+/* ------------------------------------------------------------------ */
+/*  How We Build: lifecycle rail                                       */
+/* ------------------------------------------------------------------ */
+
+/* Default (no data-lit attribute) is the static, fully lit state used before
+   JS runs and under reduced motion. The choreography sets data-lit="false"
+   on every stage, then "true" as the scrubbed rail reaches each node. */
+.hwb-node {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  /* The black ring cuts a gap in the rail so the line reads as passing behind. */
+  box-shadow:
+    0 0 0 4px #000000,
+    0 0 18px 2px rgba(255, 255, 255, 0.35);
+  transition:
+    background-color 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hwb-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  pointer-events: none;
+}
+.hwb-step[data-lit='false'] .hwb-node {
+  background: #000000;
+  box-shadow:
+    0 0 0 4px #000000,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  transform: scale(0.78);
+}
+/* One ripple each time a node lights (the animation restarts on every match). */
+.hwb-step[data-lit='true'] .hwb-node::after {
+  animation: hwb-ripple 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stage badges idle dimmed and come up to full strength as they decode. */
+.hwb-badge {
+  transition: opacity 0.4s ease;
+}
+.hwb-step[data-lit='false'] .hwb-badge {
+  opacity: 0.4;
+}
+
+/* Signal head riding the leading edge of the rail fill. */
+.hwb-head {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow:
+    0 0 10px 2px rgba(255, 255, 255, 0.55),
+    0 0 28px 6px rgba(255, 255, 255, 0.16);
+}
+
+/* "PRODUCTION LIVE" indicator: hollow until its node lights, then it breathes. */
+.hwb-live {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 9999px;
+  background: currentColor;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
+}
+.hwb-live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+}
+.hwb-step[data-lit='false'] .hwb-live {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+  opacity: 0.5;
+}
+.hwb-step[data-lit='true'] .hwb-live::after {
+  animation: hwb-live 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes hwb-ripple {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+@keyframes hwb-live {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Company Story: philosophy panel and read-along statement           */
+/* ------------------------------------------------------------------ */
+
+.cs-panel {
+  background:
+    radial-gradient(90% 70% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    radial-gradient(60% 55% at 100% 100%, rgba(255, 255, 255, 0.035), transparent 70%),
+    #111111;
+}
+.cs-grid-mask {
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 25% 35%, #000000 15%, transparent 75%);
+  mask-image: radial-gradient(ellipse 75% 65% at 25% 35%, #000000 15%, transparent 75%);
+}
+
+/* Each split word holds a dim outline copy behind a solid ink copy; only the
+   ink's opacity is animated. .text-outline strokes at 45% white, so 0.45 here
+   lands the unread outline at roughly 20%. */
+.cs-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+.cs-ink {
+  position: relative;
+}

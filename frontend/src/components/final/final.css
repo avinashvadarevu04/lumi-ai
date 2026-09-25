@@ -1,0 +1,198 @@
+/* ------------------------------------------------------------------ */
+/*  Final CTA: "The Void Collapse"                                     */
+/* ------------------------------------------------------------------ */
+
+/*
+ * --f is the frame progress, scrubbed by GSAP on .final-frame:
+ *   0  a full-bleed void that reads as a continuation of the page
+ *   1  a floating monolith inset from every edge
+ * Every stratum derives its geometry from it, so one custom property drives the
+ * clip-path inset, the edge highlight, the charcoal face and the corner ticks.
+ */
+.final-frame {
+  --f: 0;
+  --inset: 4vw;
+  --radius: 28px;
+}
+
+.final-content {
+  padding: calc(var(--inset) + clamp(2.5rem, 9vh, 5.5rem)) calc(var(--inset) + 2rem);
+}
+
+/* Hairline edge: a light field clipped to the frame. The body is clipped 1px
+   tighter, so only a 1px ring of this gradient shows, brightest along the top. */
+.final-edge {
+  clip-path: inset(calc(var(--inset) * var(--f)) round calc(var(--radius) * var(--f)));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.16) 26%,
+    rgba(255, 255, 255, 0.08) 74%,
+    rgba(255, 255, 255, 0.24) 100%
+  );
+  opacity: var(--f);
+}
+
+.final-body {
+  clip-path: inset(calc((var(--inset) + 1px) * var(--f)) round calc((var(--radius) - 1px) * var(--f)));
+  background: #000000;
+}
+
+/* Charcoal face with a soft light catch along the top edge. */
+.final-face {
+  opacity: var(--f);
+  background:
+    radial-gradient(80% 55% at 50% 0%, rgba(255, 255, 255, 0.075), transparent 70%),
+    linear-gradient(180deg, #121212 0%, #0b0b0b 52%, #050505 100%);
+}
+
+/* Faint inner grid, vignetted toward the edges; it firms up as the frame closes. */
+.final-grid {
+  opacity: calc(0.45 + 0.55 * var(--f));
+  -webkit-mask-image: radial-gradient(ellipse 65% 60% at 50% 45%, #000000 25%, transparent 100%);
+  mask-image: radial-gradient(ellipse 65% 60% at 50% 45%, #000000 25%, transparent 100%);
+}
+
+/* The watermark mark tucks behind the monolith's top-right corner. */
+.final-watermark {
+  top: calc(var(--inset) - 4rem);
+  right: calc(var(--inset) - 4rem);
+}
+
+/* Registration ticks in the monolith's inner corners. */
+.final-corners {
+  inset: calc(var(--inset) + 18px);
+  opacity: var(--f);
+}
+.final-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid rgba(255, 255, 255, 0.4);
+}
+.final-corner--tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.final-corner--tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.final-corner--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.final-corner--br {
+  right: 0;
+  bottom: 0;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+/* Giant outlined brand type. The wrapper is its own compositor layer (it only
+   fades); the line and glyphs move on 2D transforms inside it, so the outline
+   re-rasterises crisply at every scale instead of stretching a bitmap. */
+.final-giant {
+  will-change: opacity;
+}
+.final-giant__line {
+  font-size: 12.5vw;
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.22);
+}
+
+/* SplitText line masks: room for descenders under the tight heading leading. */
+.final-line-mask {
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+
+@media (max-width: 1023.98px) {
+  .final-frame {
+    --inset: 12px;
+    --radius: 20px;
+  }
+  .final-content {
+    padding: calc(var(--inset) + 4.5rem) calc(var(--inset) + 1.25rem);
+  }
+}
+
+/* Reduced motion: framed from the start, the giant type parked at low opacity. */
+@media (prefers-reduced-motion: reduce) {
+  .final-frame {
+    --f: 1;
+  }
+  .final-giant {
+    opacity: 0.35;
+    will-change: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Footer                                                             */
+/* ------------------------------------------------------------------ */
+
+/* A hairline draws under the label on hover and on keyboard focus. */
+.footer-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.footer-link::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: #ffffff;
+}
+.footer-link:hover::after,
+.footer-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* Operational status: a white ring pings out of the dot. */
+.footer-status-dot {
+  position: relative;
+}
+.footer-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 9999px;
+  animation: footer-status-ping 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes footer-status-ping {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-status-dot::after {
+    animation: none;
+    opacity: 0;
+  }
+}

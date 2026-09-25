@@ -1,31 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Globe2, Award, CheckCircle } from 'lucide-react';
 import useReveal from '../hooks/useReveal';
-
-function AnimatedCounter({ target, suffix = '+', active }) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    if (!active) return undefined;
-    let start = null;
-    let raf = 0;
-    const duration = 1800;
-    const step = (ts) => {
-      if (start === null) start = ts;
-      const p = Math.min((ts - start) / duration, 1);
-      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-      setVal(Math.round(eased * target));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [active, target]);
-  return (
-    <span className="tabular-nums">
-      {val}
-      {suffix}
-    </span>
-  );
-}
+import { gsap } from '../lib/motion/gsap';
+import { MOTION } from '../lib/motion/prefs';
+import MetricCard from './experience/MetricCard';
+import { createIsoGrid } from './experience/isoGrid';
+import { setupMetricReels } from './experience/metricReels';
+import './experience/experience.css';
 
 const METRICS = [
   { target: 50, label: 'Projects Delivered', sub: '250+ systems delivered across team careers for startups to enterprises.' },
@@ -43,29 +24,56 @@ const CREDENTIALS = [
   'Substantial Operational Cost Optimizations',
 ];
 
+/**
+ * Metrics / Impact.
+ *  desktop: the counters roll as slot-machine reels (motion blur, elastic lock,
+ *           staggered per digit and per metric) while the cards flip into place;
+ *           the isometric field swells with scroll velocity and ripples around the pointer.
+ *  mobile:  each card reveals and rolls on its own with shorter reels; the field
+ *           is low resolution with a lighter swell and no pointer ripple.
+ *  reduce:  final numbers straight away over a static grid.
+ * The header and credentials strip keep the shared useReveal entrances.
+ */
 export default function ExperienceSection() {
   const scopeRef = useRef(null);
-  const [inView, setInView] = useState(false);
+  const canvasRef = useRef(null);
+  const metricsRef = useRef(null);
   useReveal(scopeRef);
 
-  useEffect(() => {
-    const el = scopeRef.current;
-    if (!el) return undefined;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
+  useLayoutEffect(() => {
+    const section = scopeRef.current;
+    const canvas = canvasRef.current;
+    const metrics = metricsRef.current;
+    if (!section || !canvas || !metrics) return undefined;
+
+    const mm = gsap.matchMedia(section);
+    mm.add(MOTION, (context) => {
+      const { desktop, mobile } = context.conditions;
+      let branch = 'reduce';
+      if (desktop) branch = 'desktop';
+      else if (mobile) branch = 'mobile';
+
+      const field = createIsoGrid(canvas, { mode: branch, pointerTarget: section });
+      const restoreReels = branch === 'reduce' ? null : setupMetricReels(metrics, branch);
+
+      // Runs after GSAP has reverted this branch's tweens and triggers.
+      return () => {
+        field.destroy();
+        if (restoreReels) restoreReels();
+      };
+    });
+
+    return () => mm.revert();
   }, []);
 
   return (
     <section ref={scopeRef} id="experience" className="relative -mt-px overflow-hidden bg-black py-24 sm:py-32">
+      {/* Isometric field that warps with scroll velocity (experience/isoGrid.js). */}
+      <div aria-hidden="true" className="xp-field pointer-events-none absolute inset-0">
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      </div>
+      <div aria-hidden="true" className="xp-glow pointer-events-none absolute inset-0" />
+
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 flex flex-col justify-between gap-8 sm:mb-20 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
@@ -84,24 +92,15 @@ export default function ExperienceSection() {
         </div>
 
         {/* Metrics */}
-        <div data-stagger="scale" className="mb-16 grid grid-cols-1 gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
-          {METRICS.map((m, idx) => (
-            <div key={m.label} className="group flex flex-col justify-between bg-black p-8 transition-colors duration-300 hover:bg-white">
-              <div>
-                <div className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-graphite group-hover:text-neutral-500">
-                  METRIC // 0{idx + 1}
-                </div>
-                <div className="mb-3 font-display text-5xl font-bold tracking-tight text-white group-hover:text-black sm:text-6xl xl:text-7xl">
-                  <AnimatedCounter target={m.target} active={inView} />
-                </div>
-                <div className="mb-2 text-lg font-semibold text-white group-hover:text-black">{m.label}</div>
-              </div>
-              <p className="border-t border-white/10 pt-4 text-xs leading-relaxed text-silver group-hover:border-black/10 group-hover:text-neutral-700">
-                {m.sub}
-              </p>
-            </div>
+        <ul
+          ref={metricsRef}
+          role="list"
+          className="mb-16 grid grid-cols-1 overflow-hidden rounded-3xl border border-white/10 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          {METRICS.map((metric, idx) => (
+            <MetricCard key={metric.label} metric={metric} index={idx} />
           ))}
-        </div>
+        </ul>
 
         {/* Footprint & credentials */}
         <div data-reveal className="panel grid grid-cols-1 items-center gap-6 p-6 sm:p-8 lg:grid-cols-12">
